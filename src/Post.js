@@ -4,7 +4,7 @@ import Avatar from "@material-ui/core/Avatar"
 import firebase from "firebase";
 import { db } from './firebase';
 
-function Post({postId, user, username, caption, imageUrl}) {
+function Post({postId, user, postusername, caption, imageUrl}) {
 
     const [comments, setComments] = useState([]);
     const [comment, setComment] = useState('');
@@ -18,9 +18,14 @@ function Post({postId, user, username, caption, imageUrl}) {
                         .collection("comments")
                         .orderBy('timestamp', 'desc')
                         .onSnapshot((snapshot) => {
-                            setComments(snapshot.docs.map((doc) => doc.data()));
+                            setComments(snapshot.docs.map((doc) => ({
+                                id:doc.id,
+                                comment: doc.data()
+                            })));
                         });
+            
         }
+        
 
         return () => {
             unsubscribe();
@@ -46,20 +51,20 @@ function Post({postId, user, username, caption, imageUrl}) {
                     alt="귀여운여우"
                     src="https://api.time.com/wp-content/uploads/2016/03/zooptopia-film.jpg"
                 />
-                <h3>{username}</h3>
+                <h3>{postusername}</h3>
             </div>
             
 
             <img className="post_image" src={imageUrl} alt=""/>
 
-            <h4 className="post_text"><strong>{username}</strong> {caption}</h4>
+            <h4 className="post_text"><strong>{postusername}</strong> {caption}</h4>
 
             <div className="post_comments">
-                {
-                    comments.map((comment) => (
-                        <p>
+                {                    
+                    comments.map(({id, comment}) => (
+                        <div key={id}>
                             <strong>{comment.username}</strong> {comment.text}
-                        </p>
+                        </div>
                     ))
                 }
             </div>

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import Post from './Post';
-import { auth, db } from './firebase'
+import { auth } from './firebase'
 import { makeStyles } from '@material-ui/core/styles';
 import Modal from '@material-ui/core/Modal';
 import { Button, Input } from '@material-ui/core';
 import ImageUpload from './ImageUpload';
-import InstagramEmbed from 'react-instagram-embed';
+import MatchList from './MatchList';
+import Intro from './Intro';
 
 function getModalStyle(){
   const top = 50;
@@ -33,15 +33,11 @@ const useStyles = makeStyles((theme) => ({
 function App() {
   const classes = useStyles();
   const [modalStyle] = useState(getModalStyle);
-
-  const [posts, setPosts] = useState([]);
   const [open, setOpen] = useState(false);
   const [openSignIn, setOpenSignIn] = useState(false);
-
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
-
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -62,27 +58,13 @@ function App() {
     }
   }, [user, username]);
 
-  // useEffect > Runs a piece of code based on specific condition
-  useEffect(() => {
-    // Google firebase 에 posts로 저장되어 있기에 posts collection 을 가져온다.
-    db.collection('posts').onSnapshot(snapshot => {
-      // onSnapshot은 Google firebase의 데이터가 변경될 때마다 실시간으로 데이터를 받아올 수 있게 한다.
-      setPosts(snapshot.docs.map(doc => ({
-        id: doc.id,
-        post: doc.data()
-      })));
-    })
-  }, []);
-      // [] 가 비어 있는 것은 처음 한번 수행한다는 의미. 
-      // 안에 [posts] 로 되어 있다면 posts 데이터가 변경될 때마다 실시간으로 계속 수행 된다.
-
   const signUp = (event) => {
     event.preventDefault();
 
     auth
     .createUserWithEmailAndPassword(email, password)
     .then((authUser) => {
-      authUser.user.updateProfile({
+      return authUser.user.updateProfile({
         displayName: username
       })
     })
@@ -98,7 +80,7 @@ function App() {
     .signInWithEmailAndPassword(email, password)
     .catch((error) => alert(error.message));
 
-    setOpenSignIn(false);
+    setOpenSignIn(false);    
   }
 
   return (
@@ -167,7 +149,7 @@ function App() {
               onChange={(e) => setPassword(e.target.value)}
             />
             
-            <Button type="submit" onClick={signIn}>SignIn</Button>
+            <Button type="submit" onClick={signIn}>Sign In</Button>
             
           </form>
         </div> 
@@ -183,47 +165,24 @@ function App() {
           <Button onClick={() => auth.signOut()} >Logout</Button>        
         ): (
           <div className="app_loginContainer">
-            <Button onClick={() => setOpenSignIn(true)} >Sign In</Button>
+            <Button onClick={() => setOpenSignIn(true)} >LogIn</Button>
             <Button onClick={() => setOpen(true)} >Sign Up</Button>
           </div>        
         )}   
       </div>
-
-      <div className="app_posts">
-        <div className="app_postsLeft">
-          {
-            posts.map( ({id, post}) => (
-              <Post key={id} postId={id} user={user} username={post.username} caption={post.caption} imageUrl={post.imageUrl}/>
-            ))
-          }
-        </div>
-        <div className="app_postsRight">
-          <InstagramEmbed
-            url='https://www.instagram.com/p/B_uf9dmAGPw/'
-            maxWidth={320}
-            hideCaption={false}
-            containerTagName='div'
-            protocol=''
-            injectScript
-            onLoading={() => {}}
-            onSuccess={() => {}}
-            onAfterRender={() => {}}
-            onFailure={() => {}}
-          />
-        </div>
-        
-      </div>
+      {user ? (
+        <MatchList user={user} displayName={user.displayName}/>
+      ) : (
+        <Intro />
+      )
+      }
       
-      
-
       {user?.displayName ? (
-        <ImageUpload username={user.displayName}/>
-      ): (
-        <h3>로그인이 필요한 서비스입니다. 로그인을 해주세요</h3>
-      )}
-
-      {/* Posts */}
-      {/* Posts */}
+            <ImageUpload username={user.displayName} method="posts"/>
+        ): (
+            <div></div>
+        )
+      }
     </div>
   );
 }
